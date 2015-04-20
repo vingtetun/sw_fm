@@ -1,0 +1,27 @@
+{
+  "name": "fxos-contacts",
+  "version": "0.0.0",
+  "description": "FxOS contacts dependencies.",
+  "scripts": {
+    "start": "http-server ../"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/fxos/contacts.git"
+  },
+  "author": "FxOS Developers <dev-gaia@lists.mozilla.com>",
+  "license": "MPL",
+  "bugs": {
+    "url": "https://github.com/fxos/contacts/issues"
+  },
+  "engines": {
+    "node": "0.11.14"
+  },
+  "devDependencies": {
+    "http-server": "^0.7.4"
+  },
+  "registry": "jspm",
+  "directories": {
+    "baseURL": "app"
+  }
+}

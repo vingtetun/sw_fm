@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
+    <meta charset="utf-8" />
+    <meta name="theme-color" content="#242d33">
+
+    <link rel="stylesheet" href="style/main.css">
+    <script async src="js/startup.js"></script>
+  </head>
+
+  <body>
+    <div id="container" dir="ltr">
+
+      <div id="frequency-bar">
+        <div id="frequency-display">
+          <a id="speaker-switch" href="#speaker" data-speaker-on="false" data-l10n-id="speaker-switch" role="button" aria-pressed="false"></a>
+          <div id="frequency" role="status">0</div>
+          <a id="bookmark-button" href="#bookmark" data-bookmarked="false" data-l10n-id="bookmark-button" role="button"></a>
+        </div>
+      </div>
+
+      <div id="dialer-bar">
+        <div id="dialer-container" data-l10n-id="dialer-container" role="slider" aria-valuemin="87.5" aria-valuemax="108" aria-controls="frequency">
+          <div id="frequency-indicator"></div>
+          <div id="frequency-dialer" class="animation-on"></div>
+        </div>
+      </div>
+
+      <div id="fav-list">
+        <div id="fav-list-container" role="listbox" data-l10n-id="fav-list-container"></div>
+      </div>
+
+      <div id="action-bar" role="toolbar">
+        <div>
+          <a id="frequency-op-seekdown" href="#seekdown" data-l10n-id="frequency-op-seekdown" role="button"></a>
+        </div>
+        <div>
+          <a id="power-switch" href="#power-switch" data-enabled="false" data-enabling="false" data-l10n-id="power-switch-off" role="button"><span></span></a>
+        </div>
+        <div>
+          <a id="frequency-op-seekup" href="#seekup" data-l10n-id="frequency-op-seekup" role="button"></a>
+        </div>
+      </div>
+
+    </div>
+  </body>
+</html>

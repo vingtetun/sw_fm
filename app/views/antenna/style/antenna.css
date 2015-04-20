@@ -1,0 +1,10 @@
+@import url("../../shared/style/warning.css");
+
+#antenna-warning > div:first-child {
+  height: 60%;
+  background: url(images/headset.png) no-repeat center center / 18.4rem;
+}
+
+#antenna-warning .warning-header {
+  margin-top: -2.5rem;
+}

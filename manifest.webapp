@@ -1,0 +1,24 @@
+{
+  "name": "(SW) FM Radio",
+  "description": "Gaia FM Radio",
+  "launch_path": "/app/views/main/index.html",
+  "developer": {
+    "name": "The Gaia Team",
+    "url": "https://github.com/mozilla-b2g/gaia"
+  },
+  "locales": {
+    "en-US": {
+      "name": "(SW) FM Radio",
+      "description": "Gaia FM Radio"
+    }
+  },
+  "default_locale": "en-US",
+  "icons": {
+    "84": "/style/icons/fm_84.png",
+    "126": "/style/icons/fm_126.png",
+    "142": "/style/icons/fm_142.png",
+    "189": "/style/icons/fm_189.png",
+    "284": "/style/icons/fm_284.png"
+  },
+  "orientation": "default"
+}

@@ -52,15 +52,6 @@ worker.onfetch = function(e) {
 
       return caches.open(OFFLINE_CACHE).then(function(cache) {
         debug('Found something in the cache! will return it...\n');
-        if (url.indexOf('server.js') != -1) {
-        return cache.match(url).then(function(response) {
-          return response.text().then(function(text) {
-            console.log(text);
-            return new Response(text);
-          });
-        });
-        }
-
         return cache.match(url);
       }).then(function(response) {
         if (!response) {

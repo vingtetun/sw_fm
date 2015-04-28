@@ -6,6 +6,13 @@
     "name": "The Gaia Team",
     "url": "https://github.com/mozilla-b2g/gaia"
   },
+  "type": "certified",
+  "permissions": {
+    "fmradio":{ },
+    "settings":{ "access": "readonly" },
+    "speaker-control":{},
+    "audio-channel-content":{}
+  },
   "locales": {
     "en-US": {
       "name": "(SW) FM Radio",

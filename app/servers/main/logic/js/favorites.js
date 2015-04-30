@@ -1,5 +1,7 @@
 'use strict';
 
+Utils.importScript('../../../shared/js/promises.js');
+
 var favoritesUI = {
   init: function() {
     var self = this;
@@ -56,19 +58,40 @@ var favoritesUI = {
   },
 
   remove: function(frequency) {
-    var item = $(this._getID(frequency));
-    if (item) {
-      favoritesAPI.remove(frequency);
-      item.parentNode.removeChild(item);
-    }
+    var promise = favoritesAPI.remove(frequency);
+    promise.then(() => {
+      var item = $(this._getID(frequency));
+      if (item) {
+        item.parentNode.removeChild(item);
+      }
+    }).catch((e) => {
+      console.log('Cannot remove frequency: ' + e);
+    });
+    return promise;
   },
 
   add: function(frequency) {
+    var deferred = Promises.defer();
+    favoritesAPI.add(frequency).then(() => {
+      var previous = $('frequency-' + frequency);
+      if (previous) {
+        deferred.resolve(previous);
+      } else {
+        deferred.resolve(this._addDomNode(frequency));
+      }
+    }).catch((e) => {
+      console.log('Can\'t add dom node: ' + e);
+      deferred.reject(e);
+    });
+    return deferred.promise;
+  },
+
+  _addDomNode: function fv_addDomNode(frequency) {
     var item = document.createElement('div');
     item.id = 'frequency-' + frequency;
     item.className = 'fav-list-item';
     item.setAttribute('role', 'option');
-    item.innerHTML = 
+    item.innerHTML =
       '<div class="fav-list-frequency">' +
       frequency.toFixed(1) +
       '</div>' +
@@ -94,8 +117,6 @@ var favoritesUI = {
         break;
       }
     }
-
-    favoritesAPI.add(frequency);
     return item;
   }
 };

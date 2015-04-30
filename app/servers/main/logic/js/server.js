@@ -10,8 +10,9 @@ var s1 = new Server('logic', '1.0', {
   },
 
   addBookmark: function(frequency) {
-    favoritesUI.add(frequency);
-    favoritesUI.select(frequency);
+    favoritesUI.add(frequency).then(() => {
+      favoritesUI.select(frequency);
+    });
   },
 
   removeBookmark: function(frequency) {
@@ -22,10 +23,12 @@ var s1 = new Server('logic', '1.0', {
     var frequency = frequencyDialer.getFrequency();
     favoritesAPI.contains(frequency).then(function(value) {
       if (value) {
-        favoritesUI.remove(frequency);
+        favoritesUI.remove(frequency).then(() => updateFavorites(frequency));
       } else {
-        favoritesUI.add(frequency).scrollIntoView();
-        favoritesUI.select(frequency);
+        favoritesUI.add(frequency).then((elem) => {
+          elem.scrollIntoView();
+          updateFavorites(frequency);
+        });
       }
     });
   },

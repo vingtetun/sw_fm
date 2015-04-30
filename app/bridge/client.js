@@ -47,19 +47,6 @@ function createNewClient(name, version) {
 
 
   /*
-   * Deferred
-   */
-  function Deferred() {
-    var deferred = {};
-    deferred.promise = new Promise(function(resolve, reject) {
-      deferred.resolve = resolve;
-      deferred.reject = reject;
-    });
-    return deferred;
-  }
-
-
-  /*
    * RemotePrototype
    */
   function RemotePrototype(original) {
@@ -87,7 +74,7 @@ function createNewClient(name, version) {
       var id = uuid();
       var packet = new Packet(id, method, [].slice.call(arguments));
 
-      var deferred = new Deferred();
+      var deferred = Promises.defer();
       pendings[id] = {
         packet: packet,
         deferred: deferred
@@ -162,7 +149,7 @@ function createNewClient(name, version) {
     var packet = new Packet(id, method, args);
     this.send(packet);
 
-    var deferred = new Deferred();
+    var deferred = Promises.defer()
     pendings[id] = deferred;
     return deferred.promise;
   };

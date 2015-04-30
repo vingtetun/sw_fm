@@ -1,6 +1,7 @@
 'use strict';
 
 importScripts('js/async_storage.js');
+importScripts('../../shared/js/promises.js');
 
 var favorites = {
   items: null,
@@ -29,7 +30,17 @@ var favorites = {
   },
 
   _save: function() {
-    asyncStorage.setItem(this.KEYNAME, this.items);
+    var deferred = Promises.defer();
+    asyncStorage.setItem(
+      this.KEYNAME,
+      this.items,
+      () => deferred.resolve(),
+      (e) => {
+        console.log(e);
+        deferred.reject('Cannot save the favorites');
+      }
+    );
+    return deferred.promise;
   },
 
   /**
@@ -53,7 +64,9 @@ var favorites = {
         frequency: freq
       };
 
-      this._save();
+      return this._save();
+    } else {
+      return Promise.resolve('Already added');
     }
   },
 
@@ -66,9 +79,12 @@ var favorites = {
    */
   remove: function(freq) {
     var exists = this.contains(freq);
-    delete this.items[freq];
-    this._save();
-    return exists;
+    if (exists) {
+      delete this.items[freq];
+      return this._save();
+    } else {
+      return Promise.resolve('Already deleted');
+    }
   }
 };
 

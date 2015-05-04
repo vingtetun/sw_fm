@@ -26,8 +26,7 @@ var favoritesUI = {
         self.remove(frequency);
         updateFreqUI();
       } else {
-        // XXX Bitch! This needs to be done in the parent
-        //selectFrequency(frequency);
+        selectFrequency(frequency);
       }
     });
   },

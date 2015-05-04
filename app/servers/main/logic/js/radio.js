@@ -68,7 +68,7 @@ var RadioManager = (function() {
     if (mozFMRadio.enabled) {
       mozFMRadio.disable();
     } else {
-      enableFMRadio(frequencyDialer.getFrequency());
+      mozFMRadio.enable(frequencyDialer.getFrequency());
     }
   }
 
@@ -115,6 +115,7 @@ var RadioManager = (function() {
 
     setFrequency: setFrequency,
     enable: enable,
+    isEnabling: isEnabling,
     disable: disable,
 
     togglePower: togglePower

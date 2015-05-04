@@ -37,6 +37,18 @@ contracts['logic'] = {
       args: []
     },
 
+    isEnabling: {
+      args: []
+    },
+
+    disableRadio: {
+      args: []
+    },
+
+    enableRadio: {
+      args: ['number']
+    },
+
     savePage: {
       args: []
     },

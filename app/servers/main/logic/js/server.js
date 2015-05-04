@@ -40,6 +40,9 @@ var s1 = new Server('logic', '1.0', {
   seekDown: RadioManager.seekDown,
   seekUp: RadioManager.seekUp,
   togglePower: RadioManager.togglePower,
+  isEnabling: RadioManager.isEnabling,
+  disableRadio: RadioManager.disable,
+  enableRadio: enableFMRadio,
 
   savePage: savePage,
   evictPage: function() {

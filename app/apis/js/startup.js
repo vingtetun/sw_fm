@@ -4,6 +4,8 @@ var c = new Server('events', '1.0', {
   getAirplaneMode: getAirplaneMode
 });
 
+var logicAPI = new Client('logic');
+
 var airplaneModeEnabled = false;
 
 getAirplaneMode().then(function(value) {
@@ -57,7 +59,7 @@ navigator.mozSettings && navigator.mozSettings.addObserver(
     // the radio.
     if (mozFMRadio.antennaAvailable) {
       logicAPI.getFrequency().then(function(frequency) {
-        enableFMRadio(frequency);
+        logicAPI.enableRadio(frequency);
       });
     }
 
@@ -101,23 +103,22 @@ setTimeout(function() {
 mozFMRadio.onantennaavailablechange = function() {
   updateDialogs();
 
-  /*
   if (mozFMRadio.antennaAvailable) {
     // If the FM radio is enabled or enabling when the antenna is
     // unplugged, turn the FM radio on again.
     if (!!window._previousFMRadioState || !!window._previousEnablingState) {
       logicAPI.getFrequency().then(function(frequency) {
-        enableFMRadio(frequency);
+        logicAPI.enableRadio(frequency);
       });
     }
   } else {
     // Remember the current state of the FM radio
     window._previousFMRadioState = mozFMRadio.enabled;
-    window._previousEnablingState = enabling;
-    // XXX Do Something too
-    radioAPI.disable();
+    logicAPI.isEnabling().then((res) => {
+      window._previousEnablingState = res;
+    });
+    logicAPI.disableRadio();
   }
-  */
 };
 
 updateDialogs();

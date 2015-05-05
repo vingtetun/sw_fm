@@ -7,6 +7,8 @@ var c = new Server('events', '1.0', {
 var logicAPI = new Client('logic');
 
 var airplaneModeEnabled = false;
+// when app starts, default is to start the radio
+window._previousFMRadioState = true;
 
 getAirplaneMode().then(function(value) {
   airplaneModeEnabled = value;

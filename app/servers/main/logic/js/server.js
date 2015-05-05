@@ -1,12 +1,19 @@
 'use strict';
 
+var readyDeferred = Promises.defer();
 var s1 = new Server('logic', '1.0', {
   setFrequency: function(frequency) {
     return frequencyDialer.setFrequency(frequency);
   },
 
   getFrequency: function() {
-    return frequencyDialer.getFrequency();
+    var freqDeferred = Promises.defer();
+    // we resolve with the frequency once we're ready
+    readyDeferred.promise.then(() => {
+      freqDeferred.resolve(frequencyDialer.getFrequency());
+    }).catch((e) => freqDeferred.reject(e));
+
+    return freqDeferred.promise;
   },
 
   addBookmark: function(frequency) {
@@ -68,9 +75,12 @@ window.addEventListener('load', function() {
   frequencyDialer.init(/* XXX pass some stuff */);
   favoritesUI.init(/* XXX pass some stuff */);
 
-  historyAPI.restore().then(function(frequency) {
-    selectFrequency(frequency);
-  });
+  historyAPI.restore().then(
+      (frequency) => {
+        frequencyDialer.setFrequency(frequency)
+        readyDeferred.resolve();
+      }
+  ).catch((e) => readyDeferred.reject(new Error('Failed to init history')));
 });
 
 function selectFrequency(frequency) {

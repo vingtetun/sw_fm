@@ -88,18 +88,6 @@ function updateDialogs() {
   }
 }
 
-/*
-setTimeout(function() {
-  mozFMRadio.antennaAvailable = false;
-  mozFMRadio.onantennaavailablechange();
-
-  setTimeout(function() {
-    mozFMRadio.antennaAvailable = true;
-    mozFMRadio.onantennaavailablechange();
-  }, 2000);
-}, 1000);
-*/
-
 mozFMRadio.onantennaavailablechange = function() {
   updateDialogs();
 
@@ -121,4 +109,4 @@ mozFMRadio.onantennaavailablechange = function() {
   }
 };
 
-updateDialogs();
+mozFMRadio.onantennaavailablechange();

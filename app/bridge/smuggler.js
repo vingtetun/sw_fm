@@ -1,8 +1,8 @@
 (function() {
   'use strict';
 
-  function debug(str) {
-    console.log('[smuggler] ' + str);
+  function debug(str, args) {
+    console.log.bind(console, '[smuggler]').apply(console, arguments);
   };
 
   // Config is an object populate by the application itself.
@@ -100,7 +100,7 @@
   // If |!server| then the smuggler receive the data, start the
   // server using the defined configuration, and forward the request
   // before setting |server| to true and forget about the channel.
-  // 
+  //
   // In some special cases we would like to intercept messages even
   // if |server| is set to true.
   // For example we may want to be able to inspect the data
@@ -176,12 +176,50 @@
 
   function hasServerForContract(name) {
     var registration = registrations.get(name);
-    return !!registration.server;
+    return registration && !!registration.server;
+  }
+
+  function hasServerReadyForContract(name) {
+    var registration = registrations.get(name);
+    return registration && !!registration.server && registration.server.ready;
   }
 
   function getServerForContract(name) {
     var registration = registrations.get(name);
     return registration.server;
+  }
+
+  function startServer(contract) {
+
+    // check if a starting or started server
+    // is already fullfilling this contract
+    var server = getInstanceForContract(contract);
+    if (!server) {
+      // otherwise start it
+      debug('startServer: Starting server for contract ', contract);
+      var config = getConfigForContract(contract)
+      if (!config) {
+        debug('No config found for ', contract);
+        return;
+      }
+      server = new kConfigTypes[config.type](config.url);
+      server.registered = false;
+    }
+
+    // TODO: If the server is supposed to be hosted by a serviceWorker
+    // that is not running, then we don't support lazy restart here.
+    if (server == false) {
+      return;
+    }
+
+    registerServerForContract(server, contract);
+  }
+
+  function registerClientToServer(contract, server, clientUuid) {
+    server.postMessage({
+      contract: contract,
+      uuid: clientUuid
+    });
   }
 
   // TODO: Add version support
@@ -201,10 +239,6 @@
     switch (registration.type) {
       case 'client':
         registerClientForContract(registration.uuid, contract);
-        registerServerForContract(
-          getInstanceForContract(contract),
-          contract
-        );
 
         // TODO: Lazily start the server.
         // The server does not need to run if the client is not trying
@@ -215,37 +249,32 @@
         // But for now we are lazy and start the server as soon the client
         // is connected.
 
-        if (!hasServerForContract(contract)) {
-          var config = getConfigForContract(contract)
-          var server = new kConfigTypes[config.type](config.url);
-
-          // TODO: If the server is supposed to be hosted by a serviceWorker
-          // that is not running, then we don't support lazy restart here.
-          if (server == false) {
-            return;
-          }
-
-          registerServerForContract(server, contract);
-        }
-
-
-        if (hasServerForContract(contract)) {
+        if (hasServerReadyForContract(contract)) {
           var server = getServerForContract(contract);
-          server.postMessage({
-            contract: contract,
-            uuid: registration.uuid
-          });
+          registerClientToServer(contract, server, registration.uuid);
+        } else {
+          startServer(contract);
         }
+
         break;
 
       case 'server':
-        registerServerForContract(uuid, contract);
 
-        if (hasClientsForContract(contract)) {
-          // TODO:
-          // Forward clients uuids to the server if the server is
-          // restarted lazily.
+        if (hasServerForContract(contract)) {
+          var server = getServerForContract(contract);
+        } else {
+          // it could be a service worker starting itself. register it
+          startServer(contract);
         }
+
+        // start can fail
+        if (hasServerForContract(contract)) {
+          for (var client of getClientsForContract(contract)) {
+            registerClientToServer(contract, server, client);
+          }
+          server.ready = true;
+        }
+
         break;
 
       default:

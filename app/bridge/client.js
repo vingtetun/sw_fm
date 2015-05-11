@@ -104,7 +104,7 @@ function createNewClient(name, version) {
   };
 
   ClientInternal.prototype.onconnected = function(contract) {
-    debug(this.client.name + ' [connected]');
+    debug(this.uuid, ' [connected]');
 
     this.connected = true;
 
@@ -141,12 +141,12 @@ function createNewClient(name, version) {
   };
 
   ClientInternal.prototype.send = function(packet) {
-    debug('send', packet);
+    debug(this.uuid, 'send', packet);
     this.server.postMessage(packet);
   };
 
   ClientInternal.prototype.request = function(method, args) {
-    debug('request', method, args);
+    debug(this.uuid, 'request', method, args);
 
     var id = uuid();
     var packet = new Packet(id, method, args);
@@ -158,7 +158,7 @@ function createNewClient(name, version) {
   };
 
   ClientInternal.prototype.onresponse = function(packet) {
-    debug('on response', packet);
+    debug(this.uuid, 'on response', packet);
 
     var id = packet.uuid;
     var promise = runnings[id];
@@ -171,7 +171,7 @@ function createNewClient(name, version) {
   };
 
   ClientInternal.prototype.onmessage = function(e) {
-    debug('on message', e, e.data);
+    debug(this.uuid, 'on message', e, e.data);
 
     switch (e.data.type) {
       case 'connected':
@@ -193,7 +193,7 @@ function createNewClient(name, version) {
   };
 
   ClientInternal.prototype.onbroadcast = function(packet) {
-    debug('on broadcast', packet);
+    debug(this.uuid, 'on broadcast', packet);
 
     var e = new CustomEvent('broadcast:' + packet.name);
     e.data = packet.data;
@@ -207,12 +207,13 @@ function createNewClient(name, version) {
   ClientInternal.prototype.createPrototype = function(contract) {
     var prototype = {};
     for (var name in contract.methods) {
-      prototype[name] = createMethod(name, contract.methods[name]);
+      var definition = contract.methods[name];
+      debug(this.uuid, 'create method', name, definition);
+      prototype[name] = createMethod(name, definition);
     }
 
     var self = this;
     function createMethod(name, definition) {
-      debug('create method', name, definition);
       return function() {
         // XXX Most of those checks should be performed on the server side.
         var args = [].slice.call(arguments);

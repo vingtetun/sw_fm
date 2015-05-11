@@ -84,12 +84,6 @@
     init: function() {
       var self = this;
 
-      self._cachedStatus = false;
-      self._callbacks.forEach(function(callback) {
-        callback(false);
-      });
-      return;
-
       // init _cachedStatus
       var lock = window.navigator.mozSettings.createLock();
       var req = lock.get(kStatusKey);

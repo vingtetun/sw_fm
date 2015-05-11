@@ -94,11 +94,12 @@ this.asyncStorage = (function() {
     });
   }
 
-  function setItem(key, value, callback) {
+  function setItem(key, value, callback, errorCallback) {
     withStore('readwrite', function setItemBody(store) {
       var req = store.put(value, key);
       req.onerror = function setItemOnError() {
         console.error('Error in asyncStorage.setItem(): ', req.error.name);
+        errorCallback(req.error);
       };
     }, callback);
   }

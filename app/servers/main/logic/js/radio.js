@@ -6,10 +6,11 @@ var RadioManager = (function() {
   function updateEnablingState(value) {
     powerSwitch.dataset.enabling = value;
     updatePowerUI();
+    updateFrequencyBarUI();
   }
 
   function isEnabling() {
-    return powerSwitch.dataset.enabling === true;
+    return powerSwitch.dataset.enabling === 'true';
   }
 
   function updateSeekingState(value) {
@@ -66,9 +67,9 @@ var RadioManager = (function() {
 
   function togglePower() {
     if (mozFMRadio.enabled) {
-      mozFMRadio.disable();
+      disable();
     } else {
-      enableFMRadio(frequencyDialer.getFrequency());
+      enable(frequencyDialer.getFrequency());
     }
   }
 
@@ -91,8 +92,16 @@ var RadioManager = (function() {
     }
 
     powerSwitch.dataset.enabled = enabled;
-    powerSwitch.dataset.enabling = isEnabling();
   }
+
+  function updateFrequencyBarUI() {
+    var frequencyBar = $('frequency-bar');
+    if (isEnabling()) {
+      frequencyBar.classList.add('dim');
+    } else {
+      frequencyBar.classList.remove('dim');
+    }
+}
 
   return {
     seekDown: function() {
@@ -115,6 +124,7 @@ var RadioManager = (function() {
 
     setFrequency: setFrequency,
     enable: enable,
+    isEnabling: isEnabling,
     disable: disable,
 
     togglePower: togglePower

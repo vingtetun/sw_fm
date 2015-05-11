@@ -1,17 +1,25 @@
 'use strict';
 
+var readyDeferred = Promises.defer();
 var s1 = new Server('logic', '1.0', {
   setFrequency: function(frequency) {
     return frequencyDialer.setFrequency(frequency);
   },
 
   getFrequency: function() {
-    return frequencyDialer.getFrequency();
+    var freqDeferred = Promises.defer();
+    // we resolve with the frequency once we're ready
+    readyDeferred.promise.then(() => {
+      freqDeferred.resolve(frequencyDialer.getFrequency());
+    }).catch((e) => freqDeferred.reject(e));
+
+    return freqDeferred.promise;
   },
 
   addBookmark: function(frequency) {
-    favoritesUI.add(frequency);
-    favoritesUI.select(frequency);
+    favoritesUI.add(frequency).then(() => {
+      favoritesUI.select(frequency);
+    });
   },
 
   removeBookmark: function(frequency) {
@@ -22,10 +30,12 @@ var s1 = new Server('logic', '1.0', {
     var frequency = frequencyDialer.getFrequency();
     favoritesAPI.contains(frequency).then(function(value) {
       if (value) {
-        favoritesUI.remove(frequency);
+        favoritesUI.remove(frequency).then(() => updateFavorites(frequency));
       } else {
-        favoritesUI.add(frequency).scrollIntoView();
-        favoritesUI.select(frequency);
+        favoritesUI.add(frequency).then((elem) => {
+          elem.scrollIntoView();
+          updateFavorites(frequency);
+        });
       }
     });
   },
@@ -37,6 +47,9 @@ var s1 = new Server('logic', '1.0', {
   seekDown: RadioManager.seekDown,
   seekUp: RadioManager.seekUp,
   togglePower: RadioManager.togglePower,
+  isEnabling: RadioManager.isEnabling,
+  disableRadio: RadioManager.disable,
+  enableRadio: enableFMRadio,
 
   savePage: savePage,
   evictPage: function() {
@@ -62,9 +75,12 @@ window.addEventListener('load', function() {
   frequencyDialer.init(/* XXX pass some stuff */);
   favoritesUI.init(/* XXX pass some stuff */);
 
-  historyAPI.restore().then(function(frequency) {
-    selectFrequency(frequency);
-  });
+  historyAPI.restore().then(
+      (frequency) => {
+        frequencyDialer.setFrequency(frequency)
+        readyDeferred.resolve();
+      }
+  ).catch((e) => readyDeferred.reject(new Error('Failed to init history')));
 });
 
 function selectFrequency(frequency) {

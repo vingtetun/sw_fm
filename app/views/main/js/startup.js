@@ -8,11 +8,11 @@ setTimeout(function() {
     client: getPath('bridge/client.js')
   };
 
-  importScript(kPaths.registrations)
+  Utils.importScript(kPaths.registrations)
     .then(getConfiguration.bind(null, kPaths.configuration))
     .then(registerServers)
     .then(registerServiceWorker)
-    .then(importScript.bind(null, kPaths.client))
+    .then(Utils.importScript.bind(null, kPaths.client))
     .then(registerClients)
     .then(attachListeners);
 
@@ -42,24 +42,13 @@ setTimeout(function() {
     });
   }
 
-  function importScript(src) {
-    var script = document.createElement('script');
-    script.src = src;
-    document.head.appendChild(script);
-
-    return new Promise(function(resolve, reject) {
-      script.addEventListener('load', resolve);
-      script.addEventListener('error', reject);
-    });
-  }
-
 
   function registerServers(configuration) {
     var channel = new BroadcastChannel('smuggler');
     channel.postMessage({
       name: 'Config',
       config: configuration
-    }); 
+    });
     channel.close();
   }
 

@@ -99,4 +99,13 @@ var FrequencyRange = {
     unit.appendChild(container);
     $('frequency-dialer').appendChild(unit);
   },
+
+  get space() {
+    return this._space;
+  },
+
+  get minFrequency() {
+      return this._minFrequency;
+  }
+
 };

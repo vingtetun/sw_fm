@@ -1,7 +1,8 @@
 'use strict';
 
-var $ = window.top.document.getElementById.bind(window.top.document);
-var $$ = window.top.document.querySelectorAll.bind(window.top.document);
+var topDoc = window.top.document;
+var $ = topDoc.getElementById.bind(topDoc);
+var $$ = topDoc.querySelectorAll.bind(topDoc);
 
 var frequencyDialer = {
   _bandUpperBound: 0,
@@ -16,8 +17,8 @@ var frequencyDialer = {
 
   _addEventListeners: function() {
     function _removeEventListeners() {
-      document.body.removeEventListener('touchend', fd_body_touchend);
-      document.body.removeEventListener('touchmove', fd_body_touchmove);
+      topDoc.body.removeEventListener('touchend', fd_body_touchend);
+      topDoc.body.removeEventListener('touchmove', fd_body_touchmove);
     }
 
     function cloneEvent(evt) {
@@ -45,7 +46,7 @@ var frequencyDialer = {
     }
 
     function _calcTargetFrequency() {
-      return tunedFrequency - getMovingSpace() / self._space;
+      return tunedFrequency - getMovingSpace() / FrequencyRange.space;
     }
 
     function getMovingSpace() {
@@ -109,8 +110,8 @@ var frequencyDialer = {
       tunedFrequency = self._currentFrequency;
 
       _removeEventListeners();
-      document.body.addEventListener('touchmove', fd_body_touchmove);
-      document.body.addEventListener('touchend', fd_body_touchend);
+      topDoc.body.addEventListener('touchmove', fd_body_touchmove);
+      topDoc.body.addEventListener('touchend', fd_body_touchend);
     }
 
     function fd_key(event) {
@@ -136,7 +137,7 @@ var frequencyDialer = {
     this._bandLowerBound = mozFMRadio.frequencyLowerBound;
     this._bandUpperBound = mozFMRadio.frequencyUpperBound;
 
-    if (window.top.document.body.dataset.cached != 'true') {
+    if (topDoc.body.dataset.cached != 'true') {
       $('frequency-dialer').innerHTML = '';
       FrequencyRange.build(this._bandLowerBound, this._bandUpperBound);
     }
@@ -150,8 +151,7 @@ var frequencyDialer = {
       return;
     }
 
-    // XXX
-    this._translateX = (86 /* this._minFrequency*/ - frequency) * 160 /* this._space */;
+    this._translateX = (FrequencyRange.minFrequency - frequency) * FrequencyRange.space;
     var dialer = $('frequency-dialer');
     var count = dialer.childNodes.length;
     for (var i = 0; i < count; i++) {

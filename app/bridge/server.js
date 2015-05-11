@@ -26,7 +26,10 @@ function createServer(name, version, methods) {
     this.enforceContract();
 
     this.ports = [];
+
     this.listen();
+    // the server register itself when it is ready
+    this.register();
   }
 
   ServerInternal.prototype.onglobalmessage = function(data) {
@@ -53,7 +56,7 @@ function createServer(name, version, methods) {
   };
 
   ServerInternal.prototype.onmessage = function(port, data) {
-    debug('onmessage: ' + data);
+    debug('onmessage: ', data);
 
     var fn = this.methods[data.method];
     if (!fn) {
@@ -89,6 +92,19 @@ function createServer(name, version, methods) {
   ServerInternal.prototype.listen = function() {
     addEventListener('message', e => this.onglobalmessage(e.data));
   };
+
+  ServerInternal.prototype.register = function() {
+    debug(this.server.name + ' [connect]');
+    var smuggler = new BroadcastChannel('smuggler');
+    smuggler.postMessage({
+      name: 'Register',
+      type: 'server',
+      contract: this.server.name,
+      version: this.server.version,
+    });
+    smuggler.close();
+
+  }
 
   ServerInternal.prototype.enforceContract = function() {
     var contract = this.getContract();

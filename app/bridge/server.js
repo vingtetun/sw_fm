@@ -41,6 +41,8 @@ function createServer(name, version, methods) {
       this.registerClient(data.uuid);
     } else if (data.type === 'unregister') {
       this.unregisterClient(data.uuid);
+    } else if (data.type === 'unregisterServer') {
+      this.unregister();
     }
   };
 
@@ -132,7 +134,15 @@ function createServer(name, version, methods) {
     });
     smuggler.close();
 
-  }
+  };
+
+  ServerInternal.prototype.unregister = function() {
+    debug('Unregistering server ', this.server.name);
+    // XXX complexity is n^2 here. we should do smthing about it.
+    for (var port of this.ports) {
+      this.unregisterClient(port.name);
+    }
+  };
 
   ServerInternal.prototype.enforceContract = function() {
     var contract = this.getContract();

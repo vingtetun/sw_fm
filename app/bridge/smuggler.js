@@ -188,6 +188,17 @@
     registration.server = server;
   }
 
+  function unregisterServerForContract(server, name) {
+    var registration = registrations.get(name);
+    server.postMessage({
+      contract: name,
+      type: 'unregisterServer'
+    });
+    if (registration) {
+      registration.server = null;
+    }
+  }
+
   function hasServerForContract(name) {
     var registration = registrations.get(name);
     return registration && !!registration.server;
@@ -292,6 +303,7 @@
 
         // start can fail
         if (hasServerForContract(contract)) {
+          var server = getServerForContract(contract);
           for (var client of getClientsForContract(contract)) {
             registerClientToServer(contract, server, client);
           }
@@ -326,6 +338,14 @@
           // unregister in the server
           var server = getServerForContract(contract);
           unregisterClientToServer(contract, server, uuid);
+        }
+        break;
+      case 'server':
+        debug('Unregistering server for contract ', contract);
+        if (hasServerForContract(contract)) {
+          var server = getServerForContract(contract);
+          server.ready = false;
+          unregisterServerForContract(server, contract);
         }
         break;
       default:

@@ -10,6 +10,17 @@ const kErrors = {
   ContractNotDeclared: 'Method not defined in the contract: '
 };
 
+function sendToSmuggler(serverInternal, command) {
+  var smuggler = new BroadcastChannel('smuggler');
+  smuggler.postMessage({
+    name: command,
+    type: 'server',
+    contract: serverInternal.server.name,
+    version: serverInternal.server.version,
+  });
+  smuggler.close();
+}
+
 /*
   This object will be fed lazyly with server contracts.
 */
@@ -85,6 +96,14 @@ function createServer(name, version, methods) {
     } else {
       debug('Couldn\'t find any client to remove with id ', id);
     }
+
+    // Do we have any client left?
+    if (this.ports.length === 0) {
+      // don't accept new clients
+      this.unlisten();
+      // tell the smuggler we are useless
+      this.unregister();
+    }
   };
 
   ServerInternal.prototype.onmessage = function(port, data) {
@@ -122,21 +141,24 @@ function createServer(name, version, methods) {
   };
 
   ServerInternal.prototype.listen = function() {
-    addEventListener('message', e => this.onglobalmessage(e.data));
+    this.onglobalmessageListener = e => this.onglobalmessage(e.data);
+    addEventListener('message', this.onglobalmessageListener);
+  };
+
+  ServerInternal.prototype.unlisten = function() {
+    removeEventListener('message', this.onglobalmessageListener);
+    this.onglobalmessageListener = null;
   };
 
   ServerInternal.prototype.register = function() {
     debug(this.server.name + ' [connect]');
-    var smuggler = new BroadcastChannel('smuggler');
-    smuggler.postMessage({
-      name: 'register',
-      type: 'server',
-      contract: this.server.name,
-      version: this.server.version,
-    });
-    smuggler.close();
+    sendToSmuggler(this, 'register');
+  };
 
-  }
+  ServerInternal.prototype.unregister = function() {
+    debug('Unregistering server ', this.server.name);
+    sendToSmuggler(this, 'unregister');
+  };
 
   ServerInternal.prototype.enforceContract = function() {
     var contract = this.getContract();

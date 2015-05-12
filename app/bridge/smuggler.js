@@ -41,6 +41,11 @@
           } else {
             events.push(msg);
           }
+        },
+        terminate: function() {
+          w.src = "about:blank"; // trick to get an unload event in iframe
+          document.body.removeChild(w);
+          w = null;
         }
       }
     }
@@ -199,6 +204,26 @@
     registration.server = server;
   }
 
+  function killServerForContract(server, name) {
+    debug('Attempt to kill server ', name);
+    // before terminating, we need to check if this server implements another contract
+    var inUsed = false
+    for (var [contract, otherReg] of registrations) {
+      if (contract !== name && server === otherReg.server) {
+        debug('Not killing because it is used elsewhere');
+        inUsed = true;
+        break;
+      }
+    }
+
+    if (!inUsed && server.terminate) {
+      debug('really kill', server);
+      server.terminate();
+    }
+    // normally, we shouldn't have any client any more
+    registrations.delete(name);
+  }
+
   function hasServerForContract(name) {
     var registration = registrations.get(name);
     return registration && !!registration.server;
@@ -303,6 +328,7 @@
 
         // start can fail
         if (hasServerForContract(contract)) {
+          var server = getServerForContract(contract);
           for (var client of getClientsForContract(contract)) {
             registerClientToServer(contract, server, client);
           }
@@ -337,6 +363,14 @@
           // unregister in the server
           var server = getServerForContract(contract);
           unregisterClientToServer(contract, server, uuid);
+        }
+        break;
+      case 'server':
+        debug('Unregistering server for contract ', contract);
+        if (hasServerForContract(contract)) {
+          var server = getServerForContract(contract);
+          server.ready = false;
+          killServerForContract(server, contract);
         }
         break;
       default:

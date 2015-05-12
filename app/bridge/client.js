@@ -14,7 +14,10 @@ function createNewClient(name, version) {
   /*
    * Global variables
    */
+  // request that needs to be sent when receiving the connected event
   var pendings = {};
+  // waiting for an answer
+  var runnings = {};
 
 
   /*
@@ -107,7 +110,7 @@ function createNewClient(name, version) {
 
     for (var id in pendings) {
       this.send(pendings[id].packet);
-      pendings[id] = pendings[id].deferred;
+      runnings[id] = pendings[id].deferred;
     }
 
     mutatePrototype(this.client, this.createPrototype(contract));
@@ -150,7 +153,7 @@ function createNewClient(name, version) {
     this.send(packet);
 
     var deferred = Promises.defer()
-    pendings[id] = deferred;
+    runnings[id] = deferred;
     return deferred.promise;
   };
 
@@ -158,11 +161,11 @@ function createNewClient(name, version) {
     debug('on response', packet);
 
     var id = packet.uuid;
-    var promise = pendings[id];
+    var promise = runnings[id];
     if (!promise) {
       throw new Error(kErrors.NoPromise);
     }
-    delete pendings[id];
+    delete runnings[id];
 
     promise.resolve(packet.result);
   };

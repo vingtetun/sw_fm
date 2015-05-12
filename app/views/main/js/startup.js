@@ -46,7 +46,7 @@ setTimeout(function() {
   function registerServers(configuration) {
     var channel = new BroadcastChannel('smuggler');
     channel.postMessage({
-      name: 'Config',
+      name: 'config',
       config: configuration
     });
     channel.close();

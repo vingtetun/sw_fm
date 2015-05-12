@@ -37,10 +37,15 @@ function createServer(name, version, methods) {
       return;
     }
 
-    this.registerClient(data.uuid);
+    if (data.type === 'register') {
+      this.registerClient(data.uuid);
+    } else if (data.type === 'unregister') {
+      this.unregisterClient(data.uuid);
+    }
   };
 
   ServerInternal.prototype.registerClient = function(id) {
+    debug('Registering client ' + id);
     var channel = new BroadcastChannel(id);
     this.ports.push(channel);
 
@@ -49,10 +54,33 @@ function createServer(name, version, methods) {
       interface: this.getContract()
     });
 
+    // we keep a ref to the listener to be able to remove it.
+    channel.onMessageListener = e => {this.onmessage.call(this, channel, e.data);};
     channel.addEventListener(
       'message',
-      e => this.onmessage.call(this, channel, e.data)
+      channel.onMessageListener
     );
+  };
+
+  ServerInternal.prototype.unregisterClient = function(id) {
+    debug('Unregistering client ' + id);
+    // find the old channel and remove it from this.ports
+    var index = 0;
+    while (index < this.ports.length && this.ports[index].name !== id) {
+      index++;
+    }
+
+    if (index < this.ports.length) {
+      var removedChannel = this.ports.splice(index, 1)[0];
+      removedChannel.removeEventListener('message', removedChannel.onMessageListener);
+      // tell the client it's getting disconnected
+      removedChannel.postMessage({
+        type: 'disconnected',
+        interface: this.getContract()
+      });
+    } else {
+      debug('Couldn\'t find any client to remove with id ', id);
+    }
   };
 
   ServerInternal.prototype.onmessage = function(port, data) {
@@ -97,7 +125,7 @@ function createServer(name, version, methods) {
     debug(this.server.name + ' [connect]');
     var smuggler = new BroadcastChannel('smuggler');
     smuggler.postMessage({
-      name: 'Register',
+      name: 'register',
       type: 'server',
       contract: this.server.name,
       version: this.server.version,

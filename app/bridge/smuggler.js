@@ -62,20 +62,20 @@
   var channel = new BroadcastChannel('smuggler');
   channel.onmessage = function(msg) {
     switch (msg.data.name) {
-      case 'Register':
+      case 'register':
         register(msg.data);
         break;
 
-      case 'Unregister':
+      case 'unregister':
         unregister(msg.data);
         break;
 
-      case 'Config':
+      case 'config':
         config = msg.data.config;
         break;
 
       default:
-        throw new Error('Not Implemented.');
+        throw new Error('Not Implemented: ' + msg.data.name);
         break;
     }
   };
@@ -157,6 +157,20 @@
     registration.clients.push(uuid);
   }
 
+  function unregisterClientForContract(uuid, name) {
+    var registration = registrations.get(name);
+    if (registration) {
+      var index = registration.clients.indexOf(uuid);
+      if (index > -1) {
+        registration.clients.splice(index, 1);
+      } else {
+        debug('Cannot remove non-existing client ' + uuid + ' from ' + name);
+      }
+    } else {
+      debug('Cannot remove client from non existing contract ' + name);
+    }
+  }
+
   function hasClientsForContract(name) {
     var registration = registrations.get(name);
     return !!registration.clients.length;
@@ -218,7 +232,16 @@
   function registerClientToServer(contract, server, clientUuid) {
     server.postMessage({
       contract: contract,
-      uuid: clientUuid
+      uuid: clientUuid,
+      type: 'register'
+    });
+  }
+
+  function unregisterClientToServer(contract, server, clientUuid) {
+    server.postMessage({
+      contract: contract,
+      uuid: clientUuid,
+      type: 'unregister'
     });
   }
 
@@ -284,7 +307,32 @@
   };
 
   function unregister(registration) {
-    debug('Someone is trying to unregister: ' + registration);
+    if (!registration) {
+      throw new Error(kEmptyRegistration);
+    }
+
+    var contract = registration.contract;
+    if (!contract) {
+      throw new Error(kEmptyContract);
+    }
+
+    switch (registration.type) {
+      case 'client':
+        var uuid = registration.uuid;
+        debug('Unregistering client for contract ' + contract + ' with uuid ' + uuid);
+        // unregister in the smuggler
+        unregisterClientForContract(uuid, contract);
+        if (hasServerReadyForContract(contract)) {
+          // unregister in the server
+          var server = getServerForContract(contract);
+          unregisterClientToServer(contract, server, uuid);
+        }
+        break;
+      default:
+        throw new Error(registration.type + ': ' + kUnknowRegistrationType);
+        break;
+    }
   };
+
 })();
 

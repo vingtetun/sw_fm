@@ -23,14 +23,27 @@ function createNewClient(name, version) {
   /*
    * Registration
    */
-  function Registration(client, uuid) {
+  function register(client, uuid) {
     var kRegistrationChannelName = 'smuggler';
     var smuggler = new BroadcastChannel(kRegistrationChannelName);
     smuggler.postMessage({
-      name: 'Register',
+      name: 'register',
       type: 'client',
       contract: client.name,
       version: client.version,
+      uuid: uuid
+    });
+    smuggler.close();
+  }
+
+  function unregister(client, uuid) {
+    var kRegistrationChannelName = 'smuggler';
+    var smuggler = new BroadcastChannel(kRegistrationChannelName);
+    smuggler.postMessage({
+      name: 'unregister',
+      type: 'client',
+      contract: client.name,
+      version: client.version || '',
       uuid: uuid
     });
     smuggler.close();
@@ -98,7 +111,8 @@ function createNewClient(name, version) {
   }
 
   ClientInternal.prototype.connect = function() {
-    new Registration(this.client, this.uuid);
+    debug(this.uuid + ' [connect]');
+    register(this.client, this.uuid);
     this.server = new BroadcastChannel(this.uuid);
     this.listen();
   };
@@ -106,29 +120,45 @@ function createNewClient(name, version) {
   ClientInternal.prototype.onconnected = function(contract) {
     debug(this.uuid, ' [connected]');
 
-    this.connected = true;
+    if (!this.connected) {
+      this.connected = true;
 
-    for (var id in pendings) {
-      this.send(pendings[id].packet);
-      waitings[id] = pendings[id].deferred;
+      for (var id in pendings) {
+        this.send(pendings[id].packet);
+        waitings[id] = pendings[id].deferred;
+      }
+
+      mutatePrototype(this.client, this.createPrototype(contract));
     }
-
-    mutatePrototype(this.client, this.createPrototype(contract));
   };
 
   ClientInternal.prototype.disconnect = function() {
-    throw new Error(kErrors.NotImplemented);
-  };
+    debug(this.client.name + ' [disconnect]');
+    unregister(this.client, this.uuid);
+  }
 
   ClientInternal.prototype.ondisconnected = function() {
-    throw new Error(kErrors.NotImplemented);
+    debug(this.client.name + ' [disconnected]');
+    // unlisten
+    for (var [fn, eventName] of this.server.listeners) {
+      this.server.removeEventListener(eventName, fn);
+    }
+    // remove prototype
+    mutatePrototype(this.client, null);
+    this.server = null;
+    this.connected = false;
   };
 
   ClientInternal.prototype.listen = function() {
-    this.server.addEventListener('message', e => this.onmessage(e));
+    // we maintain a map of listener <-> event to be able to remove them
+    this.server.listeners = new Map();
+    var listener = e => this.onmessage(e);
+    this.server.listeners.set(listener, 'message');
+    this.server.addEventListener('message', listener);
   };
 
   ClientInternal.prototype.addEventListener = function(name, fn) {
+    this.server.listeners.set(fn, 'broadcast:' + name);
     this.server.addEventListener('broadcast:' + name, fn);
   };
 
@@ -249,6 +279,13 @@ function createNewClient(name, version) {
     internal.removeEventListener(name, callback);
   };
 
+  Client.prototype.disconnect = function() {
+    internal.disconnect();
+  }
+
+  Client.prototype.connect = function() {
+    internal.connect();
+  }
 
   var client = new Client(name, version);
   var internal = new ClientInternal(client);

@@ -111,14 +111,14 @@ function createNewClient(name, version) {
   }
 
   ClientInternal.prototype.connect = function() {
-    debug(this.uuid + ' [connect]');
+    debug(this.client.name, this.uuid + ' [connect]');
     register(this.client, this.uuid);
     this.server = new BroadcastChannel(this.uuid);
     this.listen();
   };
 
   ClientInternal.prototype.onconnected = function(contract) {
-    debug(this.uuid, ' [connected]');
+    debug(this.client.name, this.uuid, ' [connected]');
 
     if (!this.connected) {
       this.connected = true;

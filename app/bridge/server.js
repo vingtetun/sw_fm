@@ -11,7 +11,7 @@ const kErrors = {
 };
 
 /*
-  This object will be fed lazyly with server contracts.
+  This object will be fed lazily with server contracts.
 */
 self.contracts = self.contracts || {};
 
@@ -65,7 +65,6 @@ function createServer(name, version, methods) {
   };
 
   ServerInternal.prototype.unregisterClient = function(id) {
-    debug('Unregistering client ' + id);
     // find the old channel and remove it from this.ports
     var index = 0;
     while (index < this.ports.length && this.ports[index].name !== id) {
@@ -73,17 +72,22 @@ function createServer(name, version, methods) {
     }
 
     if (index < this.ports.length) {
-      var removedChannel = this.ports.splice(index, 1)[0];
-      removedChannel.removeEventListener('message', removedChannel.onMessageListener);
-      // tell the client it's getting disconnected
-      removedChannel.postMessage({
-        type: 'disconnected',
-        interface: this.getContract()
-      });
+      this.disconnectPort(this.ports.splice(index, 1)[0]);
     } else {
       debug('Couldn\'t find any client to remove with id ', id);
     }
   };
+
+  ServerInternal.prototype.disconnectPort = function(port) {
+    debug('Unregistering client ', port);
+    port.removeEventListener('message', port.onMessageListener);
+    // tell the client it's getting disconnected
+    port.postMessage({
+      type: 'disconnected',
+      interface: this.getContract()
+    });
+
+  }
 
   ServerInternal.prototype.onmessage = function(port, data) {
     debug('onmessage: ', data);
@@ -138,10 +142,22 @@ function createServer(name, version, methods) {
 
   ServerInternal.prototype.unregister = function() {
     debug('Unregistering server ', this.server.name);
-    // XXX complexity is n^2 here. we should do smthing about it.
-    for (var port of this.ports) {
-      this.unregisterClient(port.name);
-    }
+    debug(this.ports.length);
+    this.ports.forEach(port => this.disconnectPort(port));
+
+    // empty the array
+    this.ports.length = 0;
+
+    // and now please kill me!
+    var smuggler = new BroadcastChannel('smuggler');
+    smuggler.postMessage({
+      name: 'unregistered',
+      type: 'server',
+      contract: this.server.name,
+      version: this.server.version,
+    });
+    smuggler.close();
+
   };
 
   ServerInternal.prototype.enforceContract = function() {

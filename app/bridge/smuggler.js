@@ -41,7 +41,8 @@
           } else {
             events.push(msg);
           }
-        }
+        },
+        node: w
       }
     }
   };
@@ -68,6 +69,10 @@
 
       case 'unregister':
         unregister(msg.data);
+        break;
+
+      case 'unregistered':
+        kill(msg.data);
         break;
 
       case 'config':
@@ -189,12 +194,19 @@
   }
 
   function unregisterServerForContract(server, name) {
-    var registration = registrations.get(name);
+    server.ready = false;
     server.postMessage({
       contract: name,
       type: 'unregisterServer'
     });
+  }
+
+  function killServerForContract(name) {
+    debug('killing server ', name);
+    var registration = registrations.get(name);
     if (registration) {
+      document.body.removeChild(registration.server.node);
+      delete registration.server.node;
       registration.server = null;
     }
   }
@@ -351,6 +363,20 @@
       default:
         throw new Error(registration.type + ': ' + kUnknowRegistrationType);
         break;
+    }
+  };
+
+  function kill(registration) {
+    if (!registration) {
+      throw new Error(kEmptyRegistration);
+    }
+
+    var contract = registration.contract;
+    if (!contract) {
+      throw new Error(kEmptyContract);
+    }
+    if (registration.type === 'server') {
+      killServerForContract(contract);
     }
   };
 

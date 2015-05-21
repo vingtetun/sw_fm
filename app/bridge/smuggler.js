@@ -84,11 +84,8 @@
           console.log("Unregister all servers");
           for (var [contract, registration] of registrations) {
             var server = registration.server;
-            server.ready = false;
             unregisterServerForContract(server, contract);
           }
-          // flush registrations map
-          registrations = new Map();
         }
         break;
 
@@ -218,9 +215,12 @@
     debug('killing server ', name);
     var registration = registrations.get(name);
     if (registration) {
-      document.body.removeChild(registration.server.node);
-      delete registration.server.node;
+      if (registration.server.node) {
+        document.body.removeChild(registration.server.node);
+        delete registration.server.node;
+      }
       registration.server = null;
+      registrations.delete(name);
     }
   }
 

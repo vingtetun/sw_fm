@@ -79,6 +79,19 @@
         config = msg.data.config;
         break;
 
+      case 'unregister_all':
+        if (msg.data.type == 'server') {
+          console.log("Unregister all servers");
+          for (var [contract, registration] of registrations) {
+            var server = registration.server;
+            server.ready = false;
+            unregisterServerForContract(server, contract);
+          }
+          // flush registrations map
+          registrations = new Map();
+        }
+        break;
+
       default:
         throw new Error('Not Implemented: ' + msg.data.name);
         break;

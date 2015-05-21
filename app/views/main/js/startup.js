@@ -111,18 +111,15 @@ document.addEventListener("visibilitychange", function () {
   if (document.hidden) {
     console.log("App is hidden");
     smuggler.postMessage({
-      name: 'unregister',
+      name: 'unregister_all',
       type: 'server',
-      contract: 'logic'
+      contract: '####'
     });
     window.top.document.getElementById('logicIframe');
   } else {
     console.log("App has focus");
-    smuggler.postMessage({
-      name: 'register',
-      type: 'server',
-      contract: 'logic'
-    });
+    var client = window.logicAPI;
+    client.connect();
   }
   smuggler.close();
 });

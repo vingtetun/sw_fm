@@ -112,24 +112,3 @@ mozFMRadio.onantennaavailablechange = function() {
 };
 
 mozFMRadio.onantennaavailablechange();
-
-// load / unload the logic iframe if we loose visibility.
-document.addEventListener("visibilitychange", function () {
-  var smuggler = new BroadcastChannel('smuggler');
-  if (document.hidden) {
-    console.log("App is hidden");
-    smuggler.postMessage({
-      name: 'unregister',
-      type: 'server',
-      contract: 'logic'
-    });
-    window.top.document.getElementById('logicIframe');
-  } else {
-    console.log("App has focus");
-    smuggler.postMessage({
-      name: 'register',
-      type: 'server',
-      contract: 'logic'
-    });
-  }
-});

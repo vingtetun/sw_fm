@@ -112,3 +112,25 @@ mozFMRadio.onantennaavailablechange = function() {
 };
 
 mozFMRadio.onantennaavailablechange();
+
+// load / unload the logic iframe if we loose visibility.
+document.addEventListener("visibilitychange", function () {
+  var smuggler = new BroadcastChannel('smuggler');
+  if (document.hidden) {
+    console.log("App is hidden");
+    // unregister logic server
+    // we don't unregister events, as we need it to react to events all the time
+    // we don't unregister service workers, as it is useless to do so, they won't be killed.
+    smuggler.postMessage({
+      name: 'unregister',
+      type: 'server',
+      contract: 'logic'
+    });
+  } else {
+    console.log("App has focus");
+    var client = window.logicAPI;
+    console.log("logic client connect from events ");
+    client.connect();
+  }
+  smuggler.close();
+});

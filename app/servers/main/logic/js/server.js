@@ -146,3 +146,9 @@ function savePage() {
 
 function evictPage() {
 }
+
+window.onunload =  function() {
+    eventsAPI.disconnect();
+    historyAPI.disconnect();
+    favoritesAPI.disconnect();
+};

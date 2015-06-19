@@ -105,21 +105,3 @@ setTimeout(function() {
 });
 
 
-// load / unload the logic iframe if we loose visibility.
-document.addEventListener("visibilitychange", function () {
-  var smuggler = new BroadcastChannel('smuggler');
-  if (document.hidden) {
-    console.log("App is hidden");
-    smuggler.postMessage({
-      name: 'unregister_all',
-      type: 'server',
-      contract: '####'
-    });
-    window.top.document.getElementById('logicIframe');
-  } else {
-    console.log("App has focus");
-    var client = window.logicAPI;
-    client.connect();
-  }
-  smuggler.close();
-});

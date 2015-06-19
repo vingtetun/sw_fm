@@ -79,16 +79,6 @@
         config = msg.data.config;
         break;
 
-      case 'unregister_all':
-        if (msg.data.type == 'server') {
-          console.log("Unregister all servers");
-          for (var [contract, registration] of registrations) {
-            var server = registration.server;
-            unregisterServerForContract(server, contract);
-          }
-        }
-        break;
-
       default:
         throw new Error('Not Implemented: ' + msg.data.name);
         break;
@@ -169,7 +159,18 @@
     registerContract(name);
 
     var registration = registrations.get(name);
-    registration.clients.push(uuid);
+    if (!clientAlreadyRegistered(uuid, name)) {
+      registration.clients.push(uuid);
+    }
+  }
+
+  function clientAlreadyRegistered(clientId, name) {
+    for (var client of getClientsForContract(name)) {
+      if (clientId === client) {
+        return true;
+      }
+    }
+    return false;
   }
 
   function unregisterClientForContract(uuid, name) {
@@ -216,6 +217,8 @@
     var registration = registrations.get(name);
     if (registration) {
       if (registration.server.node) {
+        console.log('really kill', registration.server);
+        registration.server.node.src = "about:blank"; // trick to get an unload event in iframe
         document.body.removeChild(registration.server.node);
         delete registration.server.node;
       }

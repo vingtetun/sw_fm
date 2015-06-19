@@ -171,7 +171,7 @@ function createNewClient(name, version) {
   };
 
   ClientInternal.prototype.send = function(packet) {
-    debug(this.uuid, 'send', packet);
+    debug(this.client.name, this.uuid, 'send', packet);
     this.server.postMessage(packet);
   };
 
@@ -201,7 +201,7 @@ function createNewClient(name, version) {
   };
 
   ClientInternal.prototype.onmessage = function(e) {
-    debug(this.uuid, 'on message', e, e.data);
+    debug(this.client.name, this.uuid, 'on message', e.data);
 
     switch (e.data.type) {
       case 'connected':

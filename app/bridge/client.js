@@ -106,15 +106,18 @@ function createNewClient(name, version) {
     this.client = client;
     this.uuid = uuid();
 
-    this.server = null;
+    this.serverChannel = null;
     this.connect();
   }
 
   ClientInternal.prototype.connect = function() {
     debug(this.client.name, this.uuid + ' [connect]');
     register(this.client, this.uuid);
-    this.server = new BroadcastChannel(this.uuid);
-    this.listen();
+    // It might not be the first time we connect
+    if (!this.serverChannel) {
+      this.serverChannel = new BroadcastChannel(this.uuid);
+      this.listen();
+    }
   };
 
   ClientInternal.prototype.onconnected = function(contract) {
@@ -140,39 +143,32 @@ function createNewClient(name, version) {
   ClientInternal.prototype.ondisconnected = function() {
     debug(this.client.name + ' [disconnected]');
     // unlisten
-    for (var [fn, eventName] of this.server.listeners) {
-      this.server.removeEventListener(eventName, fn);
+    if (this.connected) {
+      this.connected = false;
+      // remove prototype
+      mutatePrototype(this.client, null);
     }
-    // remove prototype
-    mutatePrototype(this.client, null);
-    this.server = null;
-    this.connected = false;
   };
 
   ClientInternal.prototype.listen = function() {
-    // we maintain a map of listener <-> event to be able to remove them
-    this.server.listeners = new Map();
-    var listener = e => this.onmessage(e);
-    this.server.listeners.set(listener, 'message');
-    this.server.addEventListener('message', listener);
+    this.serverChannel.addEventListener('message', e => this.onmessage(e));
   };
 
   ClientInternal.prototype.addEventListener = function(name, fn) {
-    this.server.listeners.set(fn, 'broadcast:' + name);
-    this.server.addEventListener('broadcast:' + name, fn);
+    this.serverChannel.addEventListener('broadcast:' + name, fn);
   };
 
   ClientInternal.prototype.removeEventListener = function(name, fn) {
-    this.server.removeEventListener('broadcast:' + name, fn);
+    this.serverChannel.removeEventListener('broadcast:' + name, fn);
   };
 
   ClientInternal.prototype.dispatchEvent = function(e) {
-    this.server.dispatchEvent(e);
+    this.serverChannel.dispatchEvent(e);
   };
 
   ClientInternal.prototype.send = function(packet) {
     debug(this.client.name, this.uuid, 'send', packet);
-    this.server.postMessage(packet);
+    this.serverChannel.postMessage(packet);
   };
 
   ClientInternal.prototype.request = function(method, args) {
@@ -227,7 +223,7 @@ function createNewClient(name, version) {
 
     var e = new CustomEvent('broadcast:' + packet.name);
     e.data = packet.data;
-    this.server.dispatchEvent(e);
+    this.serverChannel.dispatchEvent(e);
   };
 
   ClientInternal.prototype.createInterface = function() {
@@ -238,7 +234,7 @@ function createNewClient(name, version) {
     var prototype = {};
     for (var name in contract.methods) {
       var definition = contract.methods[name];
-      debug(this.uuid, 'create method', name, definition);
+      debug(this.client.name, this.uuid, 'create method', name, definition);
       prototype[name] = createMethod(name, definition);
     }
 

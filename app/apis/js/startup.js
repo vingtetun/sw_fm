@@ -93,22 +93,26 @@ function updateDialogs() {
 mozFMRadio.onantennaavailablechange = function() {
   updateDialogs();
 
-  if (mozFMRadio.antennaAvailable) {
-    // If the FM radio is enabled or enabling when the antenna is
-    // unplugged, turn the FM radio on again.
-    if (!!window._previousFMRadioState || !!window._previousEnablingState) {
-      logicAPI.getFrequency().then(function(frequency) {
-        logicAPI.enableRadio(frequency);
+  // reconnect if in background
+  logicAPI.connect().then(() => {
+    if (mozFMRadio.antennaAvailable) {
+      // If the FM radio is enabled or enabling when the antenna is
+      // unplugged, turn the FM radio on again.
+      if (!!window._previousFMRadioState || !!window._previousEnablingState) {
+        logicAPI.getFrequency().then(function(frequency) {
+          logicAPI.enableRadio(frequency);
+        });
+      }
+    } else {
+      // Remember the current state of the FM radio
+      window._previousFMRadioState = mozFMRadio.enabled;
+      logicAPI.isEnabling().then((res) => {
+        window._previousEnablingState = res;
       });
+      logicAPI.disableRadio();
     }
-  } else {
-    // Remember the current state of the FM radio
-    window._previousFMRadioState = mozFMRadio.enabled;
-    logicAPI.isEnabling().then((res) => {
-      window._previousEnablingState = res;
-    });
-    logicAPI.disableRadio();
-  }
+
+  });
 };
 
 mozFMRadio.onantennaavailablechange();

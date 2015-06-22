@@ -7,7 +7,21 @@ function ClientFactory(name, version) {
 
 const kErrors = {
   NotImplemented: 'Not Implemented.',
-  NoPromise: 'No Promise Found.'
+  NoPromise: 'No Promise Found.',
+  Disconnected: 'Client has been disconnected',
+  Connecting: 'Client currently connecting'
+}
+
+const kSuccesses = {
+  Connected: 'Connected',
+  Disconnected: 'Disconnected'
+}
+
+const kStates = {
+  Disconnected: 0,
+  Connecting: 1,
+  Connected: 2,
+  Disconnecting: 3
 }
 
 function createNewClient(name, version) {
@@ -89,6 +103,11 @@ function createNewClient(name, version) {
     this.uuid = uuid();
 
     this.server = null;
+
+    this.state = kStates.Disconnected;
+    // deferred for connection and disconnection
+    this.connectionDeferred = null;
+
     this.connect();
   }
 
@@ -102,16 +121,35 @@ function createNewClient(name, version) {
 
   ClientInternal.prototype.connect = function() {
     debug(this.client.name, this.uuid + ' [connect]');
-    this.register();
-    this.server = new BroadcastChannel(this.uuid);
-    this.listen();
+
+    switch (this.state) {
+      case kStates.Connected:
+        return Promise.resolve(kSuccesses.Connected);
+      case kStates.Connecting:
+        return this.connectionDeferred.promise;
+      case kStates.Disconnecting:
+        return this.connectionDeferred.promise.then(() => this.connect());
+      case kStates.Disconnected:
+        this.state = kStates.Connecting;
+        this.connectionDeferred = Promises.defer();
+        this.register();
+        // It might not be the first time we connect
+        this.server = new BroadcastChannel(this.uuid);
+        this.listen();
+        return this.connectionDeferred.promise;
+      default:
+        throw new Error('Unsupported state: ' + this.state);
+        break;
+    }
   };
 
   ClientInternal.prototype.onconnected = function(contract) {
     debug(this.client.name, this.uuid, ' [connected]');
+    this.connectionDeferred.resolve(kSuccesses.Connected);
+    this.connectionDeferred = null;
 
-    if (!this.connected) {
-      this.connected = true;
+    if (this.state !== kStates.Connected) {
+      this.state = kStates.Connected;
 
       for (var id in pendings) {
         this.send(pendings[id].packet);
@@ -124,20 +162,61 @@ function createNewClient(name, version) {
 
   ClientInternal.prototype.disconnect = function() {
     debug(this.client.name + ' [disconnect]');
-    this.unregister();
+    switch (this.state) {
+      case kStates.Disconnected:
+        return Promise.resolve(kSuccesses.Disconnected);
+      case kStates.Connecting:
+        // we reject disconnection request if we are connecting
+        // to avoid losing any calls
+        return Promise.reject(kErrors.Connecting);
+      case kStates.Disconnecting:
+        return this.connectionDeferred.promise;
+      case kStates.Connected:
+        this.state = kStates.Disconnecting;
+        this.connectionDeferred = Promises.defer();
+        this.unregister();
+        return this.connectionDeferred.promise;
+      default:
+        throw new Error('Unsupported state: ' + this.state);
+        break;
+    }
   }
 
   ClientInternal.prototype.ondisconnected = function() {
     debug(this.client.name + ' [disconnected]');
-    // unlisten
-    for (var [fn, eventName] of this.server.listeners) {
-      this.server.removeEventListener(eventName, fn);
+
+    switch (this.state) {
+      case kStates.Disconnected:
+        // nothing to do :-)
+        break;
+      case kStates.Connecting:
+        this.connectionDeferred.reject(kErrors.Disconnected);
+        break;
+      // we should not receive disconnected without requesting it, but...
+      case kStates.Connected:
+      case kStates.Disconnecting:
+        // unlisten
+        for (var [fn, eventName] of this.server.listeners) {
+          this.server.removeEventListener(eventName, fn);
+        }
+        // trash runnings jobs
+        for (var id in runnings) {
+          runnings[id].reject(kErrors.Disconnected);
+          delete runnings[id];
+        }
+        // remove prototype
+        mutatePrototype(this.client, null);
+        this.server.close();
+        this.server = null;
+        this.state = kStates.Disconnected;
+        if (this.connectionDeferred) {
+          this.connectionDeferred.resolve(kSuccesses.Disconnected);
+        }
+        break;
+      default:
+        throw new Error('Unsupported state: ' + this.state);
+        break;
     }
-    // remove prototype
-    mutatePrototype(this.client, null);
-    this.server.close();
-    this.server = null;
-    this.connected = false;
   };
 
   ClientInternal.prototype.listen = function() {
@@ -271,11 +350,11 @@ function createNewClient(name, version) {
   };
 
   Client.prototype.disconnect = function() {
-    internal.disconnect();
+    return internal.disconnect();
   }
 
   Client.prototype.connect = function() {
-    internal.connect();
+    return internal.connect();
   }
 
   var client = new Client(name, version);

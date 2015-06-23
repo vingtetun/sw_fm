@@ -3,6 +3,15 @@
 importScripts('js/async_storage.js');
 importScripts('../../shared/js/promises.js');
 
+const kErrors = {
+  SaveError: 'Cannot save the favorites'
+};
+
+const kSuccess = {
+  AlreadyAdded: 'Already added',
+  AlreadyDeleted: 'Already deleted'
+};
+
 var favorites = {
   items: null,
 
@@ -37,7 +46,7 @@ var favorites = {
       () => deferred.resolve(),
       (e) => {
         console.log(e);
-        deferred.reject('Cannot save the favorites');
+        deferred.reject(kErrors.SaveError);
       }
     );
     return deferred.promise;
@@ -66,7 +75,7 @@ var favorites = {
 
       return this._save();
     } else {
-      return Promise.resolve('Already added');
+      return Promise.resolve(kSuccess.AlreadyAdded);
     }
   },
 
@@ -83,7 +92,7 @@ var favorites = {
       delete this.items[freq];
       return this._save();
     } else {
-      return Promise.resolve('Already deleted');
+      return Promise.resolve(kSuccess.AlreadyDeleted);
     }
   }
 };

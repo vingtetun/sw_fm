@@ -7,7 +7,10 @@ function ClientFactory(name, version) {
 
 const kErrors = {
   NotImplemented: 'Not Implemented.',
-  NoPromise: 'No Promise Found.'
+  NoPromise: 'No Promise Found.',
+  CurrentlyConnecting: 'Currently connecting.',
+  CurrentlyDisconnecting: 'Currently disconnecting',
+  Disconnected: 'We have been disconnected!'
 }
 
 function createNewClient(name, version) {
@@ -62,6 +65,18 @@ function createNewClient(name, version) {
   }
 
 
+   /*
+   * Deferred
+   */
+  function Deferred() {
+    var deferred = {};
+    deferred.promise = new Promise(function(resolve, reject) {
+      deferred.resolve = resolve;
+      deferred.reject = reject;
+    });
+    return deferred;
+  }
+
   /*
    * RemotePrototype
    */
@@ -90,7 +105,7 @@ function createNewClient(name, version) {
       var id = uuid();
       var packet = new Packet(id, method, [].slice.call(arguments));
 
-      var deferred = Promises.defer();
+      var deferred = new Deferred();
       pendings[id] = {
         packet: packet,
         deferred: deferred
@@ -119,7 +134,7 @@ function createNewClient(name, version) {
     debug(this.client.name, this.uuid + ' [connect]');
 
     if (this.connected) {
-      return Promise.resolve('Already connected');
+      return Promise.resolve();
     } else if (this.disconnectionDeferred) {
       // wait for complete disconnection before trying to connect
       debug(this.client.name, this.uuid, 'trying to reconnect');
@@ -127,7 +142,7 @@ function createNewClient(name, version) {
     } else if (this.connectionDeferred) {
       return this.connectionDeferred.promise;
     } else {
-      this.connectionDeferred = Promises.defer();
+      this.connectionDeferred = new Deferred();
       register(this.client, this.uuid);
       // It might not be the first time we connect
       if (!this.serverChannel) {
@@ -142,7 +157,7 @@ function createNewClient(name, version) {
     debug(this.client.name, this.uuid, ' [connected]');
     // we might not be waiting for connection
     if (this.connectionDeferred) {
-      this.connectionDeferred.resolve('Connection success');
+      this.connectionDeferred.resolve();
     }
     this.connectionDeferred = null;
 
@@ -161,16 +176,16 @@ function createNewClient(name, version) {
   ClientInternal.prototype.disconnect = function() {
     debug(this.client.name + ' [disconnect]');
     if (!this.connected) {
-      return Promise.resolve('Already disconnected');
+      return Promise.resolve();
     }
     if (this.connectionDeferred) {
       // we reject disconnection request if we are connecting
       // to avoid losing any calls
-      return Promise.reject('Currently connecting');
+      return Promise.reject(kErrors.CurrentlyConnecting);
     } else if (this.disconnectionDeferred) {
       return this.disconnectionDeferred.promise;
     } else {
-      this.disconnectionDeferred = Promises.defer();
+      this.disconnectionDeferred = new Deferred();
       unregister(this.client, this.uuid);
       return this.disconnectionDeferred.promise;
     }
@@ -188,7 +203,7 @@ function createNewClient(name, version) {
     if (this.disconnectionDeferred) {
       this.disconnectionDeferred.resolve();
     } else if (this.connectionDeferred) {
-      this.connectionDeferred.reject('We have been disconnected!');
+      this.connectionDeferred.reject(kErrors.Disconnected);
     }
 
     this.connectionDeferred = null;
@@ -223,7 +238,7 @@ function createNewClient(name, version) {
     var packet = new Packet(id, method, args);
     this.send(packet);
 
-    var deferred = Promises.defer()
+    var deferred = new Deferred();
     waitings[id] = deferred;
     return deferred.promise;
   };

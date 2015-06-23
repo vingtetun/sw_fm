@@ -137,7 +137,6 @@ function createNewClient(name, version) {
       return Promise.resolve();
     } else if (this.disconnectionDeferred) {
       // wait for complete disconnection before trying to connect
-      debug(this.client.name, this.uuid, 'trying to reconnect');
       return this.disconnectionDeferred.promise.then(() => this.connect());
     } else if (this.connectionDeferred) {
       return this.connectionDeferred.promise;

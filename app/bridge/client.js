@@ -58,6 +58,18 @@ function createNewClient(name, version) {
   }
 
 
+   /*
+   * Deferred
+   */
+  function Deferred() {
+    var deferred = {};
+    deferred.promise = new Promise(function(resolve, reject) {
+      deferred.resolve = resolve;
+      deferred.reject = reject;
+    });
+    return deferred;
+  }
+
   /*
    * RemotePrototype
    */
@@ -86,7 +98,7 @@ function createNewClient(name, version) {
       var id = uuid();
       var packet = new Packet(id, method, [].slice.call(arguments));
 
-      var deferred = Promises.defer();
+      var deferred = new Deferred();
       pendings[id] = {
         packet: packet,
         deferred: deferred
@@ -131,7 +143,7 @@ function createNewClient(name, version) {
         return this.connectionDeferred.promise.then(() => this.connect());
       case kStates.Disconnected:
         this.state = kStates.Connecting;
-        this.connectionDeferred = Promises.defer();
+        this.connectionDeferred = new Deferred();
         this.register();
         // It might not be the first time we connect
         this.server = new BroadcastChannel(this.uuid);
@@ -173,7 +185,7 @@ function createNewClient(name, version) {
         return this.connectionDeferred.promise;
       case kStates.Connected:
         this.state = kStates.Disconnecting;
-        this.connectionDeferred = Promises.defer();
+        this.connectionDeferred = new Deferred();
         this.unregister();
         return this.connectionDeferred.promise;
       default:
@@ -252,7 +264,7 @@ function createNewClient(name, version) {
     var packet = new Packet(id, method, args);
     this.send(packet);
 
-    var deferred = Promises.defer()
+    var deferred = new Deferred();
     runnings[id] = deferred;
     return deferred.promise;
   };

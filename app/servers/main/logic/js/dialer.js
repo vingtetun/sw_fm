@@ -15,6 +15,12 @@ var frequencyDialer = {
     this._addEventListeners();
   },
 
+  cleanup: function() {
+    if (this._removeEventListeners) {
+      this._removeEventListeners();
+    }
+  },
+
   _addEventListeners: function() {
     function _removeEventListeners() {
       topDoc.body.removeEventListener('touchend', fd_body_touchend);
@@ -131,6 +137,13 @@ var frequencyDialer = {
     dialerContainer.addEventListener('touchstart', fd_touchstart);
     // ACCESSIBILITY - Add keypress event for screen reader
     dialerContainer.addEventListener('keypress', fd_key);
+
+    // this method will be used to clean up stuff.
+    this._removeEventListeners = () => {
+      _removeEventListeners();
+      dialerContainer.removeEventListener('touchstart', fd_touchstart);
+      dialerContainer.removeEventListener('keypress', fd_key);
+    };
   },
 
   _initUI: function() {

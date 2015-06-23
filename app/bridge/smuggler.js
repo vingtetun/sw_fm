@@ -223,7 +223,6 @@
         delete registration.server.node;
       }
       registration.server = null;
-      registrations.delete(name);
     }
   }
 

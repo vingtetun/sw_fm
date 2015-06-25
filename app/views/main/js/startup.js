@@ -46,7 +46,7 @@ setTimeout(function() {
   function registerServers(configuration) {
     var channel = new BroadcastChannel('smuggler');
     channel.postMessage({
-      name: 'Config',
+      name: 'config',
       config: configuration
     });
     channel.close();
@@ -58,23 +58,23 @@ setTimeout(function() {
   }
 
 
-  function onclick(id, method) {
+  function onclick(id, client, method) {
     var element = document.getElementById(id);
     if (!element) {
       return;
     }
 
-    element.addEventListener('click', method.call.bind(method));
+    element.addEventListener('click', () => client[method]());
   }
 
 
   function attachListeners() {
-    onclick('frequency-op-seekdown', logicAPI.seekDown);
-    onclick('power-switch', logicAPI.togglePower);
-    onclick('frequency-op-seekup', logicAPI.seekUp);
-    onclick('bookmark-button', logicAPI.toggleBookmark);
-    onclick('speaker-switch', logicAPI.toggleSpeaker);
-    onclick('fav-list-container', logicAPI.selectFavorite);
+    onclick('frequency-op-seekdown', logicAPI, 'seekDown');
+    onclick('power-switch', logicAPI, 'togglePower');
+    onclick('frequency-op-seekup', logicAPI, 'seekUp');
+    onclick('bookmark-button', logicAPI, 'toggleBookmark');
+    onclick('speaker-switch', logicAPI, 'toggleSpeaker');
+    onclick('fav-list-container', logicAPI, 'selectFavorite');
   }
 
 
@@ -103,4 +103,5 @@ setTimeout(function() {
     });
   }
 });
+
 

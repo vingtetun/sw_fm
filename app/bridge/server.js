@@ -11,7 +11,7 @@ const kErrors = {
 };
 
 /*
-  This object will be fed lazyly with server contracts.
+  This object will be fed lazily with server contracts.
 */
 self.contracts = self.contracts || {};
 
@@ -26,7 +26,10 @@ function createServer(name, version, methods) {
     this.enforceContract();
 
     this.ports = [];
+
     this.listen();
+    // the server register itself when it is ready
+    this.register();
   }
 
   ServerInternal.prototype.onglobalmessage = function(data) {
@@ -34,10 +37,17 @@ function createServer(name, version, methods) {
       return;
     }
 
-    this.registerClient(data.uuid);
+    if (data.type === 'register') {
+      this.registerClient(data.uuid);
+    } else if (data.type === 'unregister') {
+      this.unregisterClient(data.uuid);
+    } else if (data.type === 'unregisterServer') {
+      this.unregister();
+    }
   };
 
   ServerInternal.prototype.registerClient = function(id) {
+    debug(this.server.name, 'Registering client ' + id);
     var channel = new BroadcastChannel(id);
     this.ports.push(channel);
 
@@ -46,14 +56,42 @@ function createServer(name, version, methods) {
       interface: this.getContract()
     });
 
+    // we keep a ref to the listener to be able to remove it.
+    channel.onMessageListener = e => {this.onmessage.call(this, channel, e.data);};
     channel.addEventListener(
       'message',
-      e => this.onmessage.call(this, channel, e.data)
+      channel.onMessageListener
     );
   };
 
+  ServerInternal.prototype.unregisterClient = function(id) {
+    debug(this.server.name, 'Unregistering client', id);
+    // find the old channel and remove it from this.ports
+    var index = 0;
+    while (index < this.ports.length && this.ports[index].name !== id) {
+      index++;
+    }
+
+    if (index < this.ports.length) {
+      this.disconnectPort(this.ports.splice(index, 1)[0]);
+    } else {
+      debug('Couldn\'t find any client to remove with id ', id);
+    }
+  };
+
+  ServerInternal.prototype.disconnectPort = function(port) {
+    debug(this.server.name, 'Unregistering client ', port.name);
+    port.removeEventListener('message', port.onMessageListener);
+    // tell the client it's getting disconnected
+    port.postMessage({
+      type: 'disconnected',
+      interface: this.getContract()
+    });
+
+  }
+
   ServerInternal.prototype.onmessage = function(port, data) {
-    debug('onmessage: ' + data);
+    debug(this.server.name, 'onmessage: ', data);
 
     var fn = this.methods[data.method];
     if (!fn) {
@@ -69,7 +107,7 @@ function createServer(name, version, methods) {
   };
 
   ServerInternal.prototype.respond = function(request, result) {
-    debug('respond', result);
+    debug(this.server.name, 'respond', result);
 
     var response = request;
     response.result = result;
@@ -88,6 +126,38 @@ function createServer(name, version, methods) {
 
   ServerInternal.prototype.listen = function() {
     addEventListener('message', e => this.onglobalmessage(e.data));
+  };
+
+  ServerInternal.prototype.register = function() {
+    debug(this.server.name, ' [connect]');
+    var smuggler = new BroadcastChannel('smuggler');
+    smuggler.postMessage({
+      name: 'register',
+      type: 'server',
+      contract: this.server.name,
+      version: this.server.version,
+    });
+    smuggler.close();
+
+  };
+
+  ServerInternal.prototype.unregister = function() {
+    debug(this.server.name, 'Unregistering server');
+    this.ports.forEach(port => this.disconnectPort(port));
+
+    // empty the array
+    this.ports.length = 0;
+
+    // and now please kill me!
+    var smuggler = new BroadcastChannel('smuggler');
+    smuggler.postMessage({
+      name: 'unregistered',
+      type: 'server',
+      contract: this.server.name,
+      version: this.server.version,
+    });
+    smuggler.close();
+
   };
 
   ServerInternal.prototype.enforceContract = function() {

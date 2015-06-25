@@ -93,22 +93,48 @@ function updateDialogs() {
 mozFMRadio.onantennaavailablechange = function() {
   updateDialogs();
 
-  if (mozFMRadio.antennaAvailable) {
-    // If the FM radio is enabled or enabling when the antenna is
-    // unplugged, turn the FM radio on again.
-    if (!!window._previousFMRadioState || !!window._previousEnablingState) {
-      logicAPI.getFrequency().then(function(frequency) {
-        logicAPI.enableRadio(frequency);
+  // reconnect if in background
+  logicAPI.connect().then(() => {
+    if (mozFMRadio.antennaAvailable) {
+      // If the FM radio is enabled or enabling when the antenna is
+      // unplugged, turn the FM radio on again.
+      if (!!window._previousFMRadioState || !!window._previousEnablingState) {
+        logicAPI.getFrequency().then(function(frequency) {
+          logicAPI.enableRadio(frequency);
+        });
+      }
+    } else {
+      // Remember the current state of the FM radio
+      window._previousFMRadioState = mozFMRadio.enabled;
+      logicAPI.isEnabling().then((res) => {
+        window._previousEnablingState = res;
       });
+      logicAPI.disableRadio();
     }
-  } else {
-    // Remember the current state of the FM radio
-    window._previousFMRadioState = mozFMRadio.enabled;
-    logicAPI.isEnabling().then((res) => {
-      window._previousEnablingState = res;
-    });
-    logicAPI.disableRadio();
-  }
+
+  });
 };
 
 mozFMRadio.onantennaavailablechange();
+
+// load / unload the logic iframe if we loose visibility.
+document.addEventListener("visibilitychange", function () {
+  var smuggler = new BroadcastChannel('smuggler');
+  if (document.hidden) {
+    console.log("App is hidden");
+    // unregister logic server
+    // we don't unregister events, as we need it to react to events all the time
+    // we don't unregister service workers, as it is useless to do so, they won't be killed.
+    smuggler.postMessage({
+      name: 'unregister',
+      type: 'server',
+      contract: 'logic'
+    });
+  } else {
+    console.log("App has focus");
+    var client = window.logicAPI;
+    console.log("logic client connect from events ");
+    client.connect();
+  }
+  smuggler.close();
+});

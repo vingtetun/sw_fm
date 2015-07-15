@@ -55,6 +55,8 @@ setTimeout(function() {
 
   function registerClients() {
     window.logicAPI = new Client('logic');
+    // we keep a ref to the events server to prevent it from being unloaded
+    window.eventAPI = new Client('events');
   }
 
 
@@ -104,3 +106,16 @@ setTimeout(function() {
   }
 });
 
+// Disconnect logic client if we loose visibility
+document.addEventListener("visibilitychange", function () {
+  var client = window.logicAPI;
+  if (client) {
+    if (document.hidden) {
+      console.log("App is hidden");
+      client.disconnect();
+    } else {
+      console.log("App has focus");
+      client.connect();
+    }
+  }
+});

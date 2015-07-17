@@ -101,14 +101,14 @@ function createNewClient(name, version) {
   };
 
   ClientInternal.prototype.connect = function() {
-    debug(this.uuid + ' [connect]');
+    debug(this.client.name, this.uuid + ' [connect]');
     this.register();
     this.server = new BroadcastChannel(this.uuid);
     this.listen();
   };
 
   ClientInternal.prototype.onconnected = function(contract) {
-    debug(this.uuid, ' [connected]');
+    debug(this.client.name, this.uuid, ' [connected]');
 
     if (!this.connected) {
       this.connected = true;
@@ -162,7 +162,7 @@ function createNewClient(name, version) {
   };
 
   ClientInternal.prototype.send = function(packet) {
-    debug(this.uuid, 'send', packet);
+    debug(this.client.name, this.uuid, 'send', packet);
     this.server.postMessage(packet);
   };
 
@@ -192,7 +192,7 @@ function createNewClient(name, version) {
   };
 
   ClientInternal.prototype.onmessage = function(e) {
-    debug(this.uuid, 'on message', e, e.data);
+    debug(this.client.name, this.uuid, 'on message', e.data);
 
     switch (e.data.type) {
       case 'connected':

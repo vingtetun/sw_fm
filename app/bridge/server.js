@@ -56,7 +56,7 @@ function createServer(name, version, methods) {
   };
 
   ServerInternal.prototype.registerClient = function(id) {
-    debug('Registering client ' + id);
+    debug(this.server.name, 'Registering client ' + id);
     var channel = new BroadcastChannel(id);
     this.ports.push(channel);
 
@@ -74,7 +74,7 @@ function createServer(name, version, methods) {
   };
 
   ServerInternal.prototype.unregisterClient = function(id) {
-    debug('Unregistering client ' + id);
+    debug(this.server.name, 'Unregistering client', id);
     // find the old channel and remove it from this.ports
     var index = 0;
     while (index < this.ports.length && this.ports[index].name !== id) {
@@ -107,7 +107,7 @@ function createServer(name, version, methods) {
   };
 
   ServerInternal.prototype.onmessage = function(port, data) {
-    debug('onmessage: ', data);
+    debug(this.server.name, 'onmessage: ', data);
 
     var fn = this.methods[data.method];
     if (!fn) {
@@ -123,7 +123,7 @@ function createServer(name, version, methods) {
   };
 
   ServerInternal.prototype.respond = function(request, result) {
-    debug('respond', result);
+    debug(this.server.name, 'respond', result);
 
     var response = request;
     response.result = result;
@@ -151,12 +151,12 @@ function createServer(name, version, methods) {
   };
 
   ServerInternal.prototype.register = function() {
-    debug(this.server.name + ' [connect]');
+    debug(this.server.name, ' [connect]');
     sendToSmuggler(this, 'register');
   };
 
   ServerInternal.prototype.unregister = function() {
-    debug('Unregistering server ', this.server.name);
+    debug(this.server.name, 'Unregistering server ');
     sendToSmuggler(this, 'unregister');
   };
 

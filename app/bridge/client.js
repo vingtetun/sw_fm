@@ -208,9 +208,10 @@ function createNewClient(name, version) {
       case kStates.Connected:
       case kStates.Disconnecting:
         // unlisten
-        for (var [fn, eventName] of this.server.listeners) {
+        for (var [fn, eventName] of this.listeners) {
           this.server.removeEventListener(eventName, fn);
         }
+        this.listeners = new Map();
         // trash runnings jobs
         for (var id in runnings) {
           runnings[id].reject(kErrors.Disconnected);
@@ -233,14 +234,14 @@ function createNewClient(name, version) {
 
   ClientInternal.prototype.listen = function() {
     // we maintain a map of listener <-> event to be able to remove them
-    this.server.listeners = new Map();
+    this.listeners = new Map();
     var listener = e => this.onmessage(e);
-    this.server.listeners.set(listener, 'message');
+    this.listeners.set(listener, 'message');
     this.server.addEventListener('message', listener);
   };
 
   ClientInternal.prototype.addEventListener = function(name, fn) {
-    this.server.listeners.set(fn, 'broadcast:' + name);
+    this.listeners.set(fn, 'broadcast:' + name);
     this.server.addEventListener('broadcast:' + name, fn);
   };
 

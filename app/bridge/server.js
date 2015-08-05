@@ -37,6 +37,7 @@ function createServer(name, version, methods) {
     this.enforceContract();
 
     this.ports = [];
+    this.messageListeners = new Map();
 
     this.listen();
     // the server register itself when it is ready
@@ -66,10 +67,11 @@ function createServer(name, version, methods) {
     });
 
     // we keep a ref to the listener to be able to remove it.
-    channel.onMessageListener = e => {this.onmessage.call(this, channel, e.data);};
+    var onMessageListener = e => {this.onmessage.call(this, channel, e.data);};
+    this.messageListeners.set(channel, onMessageListener);
     channel.addEventListener(
       'message',
-      channel.onMessageListener
+      onMessageListener
     );
   };
 
@@ -83,7 +85,8 @@ function createServer(name, version, methods) {
 
     if (index < this.ports.length) {
       var removedChannel = this.ports.splice(index, 1)[0];
-      removedChannel.removeEventListener('message', removedChannel.onMessageListener);
+      removedChannel.removeEventListener('message', this.messageListeners.get(removedChannel));
+      this.messageListeners.delete(removedChannel);
       // tell the client it's getting disconnected
       // Technically, we don't need to do that, but the client could have pending requests
       // when it disconnected. Sending a disconnected event make this client able to still deal
@@ -147,6 +150,7 @@ function createServer(name, version, methods) {
 
   ServerInternal.prototype.unlisten = function() {
     removeEventListener('message', this.onglobalmessageListener);
+    this.listeners = null;
     this.onglobalmessageListener = null;
   };
 

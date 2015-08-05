@@ -15,7 +15,7 @@ var favoritesUI = {
     }
 
     var _container = $('fav-list-container');
-    _container.addEventListener('click', function _onclick(event) {
+    this._onclickListener = function _onclick(event) {
       var frequency = self._getFrequency(event.target);
       if (!frequency) {
         return;
@@ -28,7 +28,13 @@ var favoritesUI = {
       } else {
         selectFrequency(frequency);
       }
-    });
+    };
+    _container.addEventListener('click', this._onclickListener);
+  },
+
+  cleanup: function() {
+    var _container = $('fav-list-container');
+    _container.removeEventListener('click', this._onclickListener);
   },
 
   _getID: function(frequency) {

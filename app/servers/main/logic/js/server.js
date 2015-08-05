@@ -149,6 +149,7 @@ function evictPage() {
 
 window.onunload =  function() {
   frequencyDialer.cleanup();
+  favoritesUI.cleanup();
   eventsAPI.disconnect();
   historyAPI.disconnect();
   favoritesAPI.disconnect();

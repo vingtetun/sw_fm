@@ -1,9 +1,4 @@
 {
-  "../../servers/main/server.js": {
-    "contracts": ["history", "favorites"],
-    "type": "Worker"
-  },  
-
   "../../apis/index.html": {
     "contracts": ["events"],
     "type": "Window"

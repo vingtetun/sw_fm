@@ -1,8 +1,6 @@
 'use strict';
 
-importScripts('js/async_storage.js');
-
-var history = {
+var fmHistory = {
   _historyList: [],
 
   /**

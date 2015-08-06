@@ -1,8 +1,5 @@
 'use strict';
 
-importScripts('js/async_storage.js');
-importScripts('../../shared/js/promises.js');
-
 const kErrors = {
   SaveError: 'Cannot save the favorites'
 };
@@ -12,7 +9,7 @@ const kSuccess = {
   AlreadyDeleted: 'Already deleted'
 };
 
-var favorites = {
+window.favorites = {
   items: null,
 
   KEYNAME: 'favlist',

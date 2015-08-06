@@ -1,6 +1,6 @@
 'use strict';
 
-Utils.importScript('../../../shared/js/promises.js');
+//Utils.importScript('../../../shared/js/promises.js');
 
 var favoritesUI = {
   init: function() {

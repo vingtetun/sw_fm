@@ -67,8 +67,8 @@ function enableFMRadio(frequency) {
 }
 
 
-var favoritesAPI = new Client('favorites');
-var historyAPI = new Client('history');
+//var favoritesAPI = window.favorites;
+//var historyAPI = new Client('history');
 var eventsAPI = new Client('events');
 
 window.addEventListener('load', function() {
